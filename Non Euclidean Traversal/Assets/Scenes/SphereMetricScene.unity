@@ -163,8 +163,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b60f4ab368ce4f5a82a24e696a665f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralCanvas
-  vertexRadius: 0.08
-  edgeWidth: 0.025
+  vertexRadius: 0.04
+  edgeWidth: 0.02
+  thetaCoverCount: 2
+  curveSegments: 10
+  worldQuatTheta: 1
+  worldQuatDirn: {x: 1, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0

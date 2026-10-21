@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class ProceduralCanvas : MonoBehaviour
 {
-
     // Canvas lists
     private readonly List<Vector2> vertices = new();
     private readonly List<Transform> vertexObjects = new();
@@ -13,9 +12,10 @@ public class ProceduralCanvas : MonoBehaviour
 
     // Mathematical objects lists
     private readonly List<Vector3> vertices3d = new();
+    private readonly List<Vector2> verticesMapped = new();
     private readonly List<(int a, int b)> connections3d = new();
-    private readonly Quaternion worldQuaternion = Quaternion.identity;
     private readonly List<Vector2> vertices3dAngles = new();
+    private float thetaMaxDistRad = 0f;
 
     // Materials and sprites for drawing
     private Material lineMaterial;
@@ -24,6 +24,11 @@ public class ProceduralCanvas : MonoBehaviour
     // Configurable fields
     [SerializeField] private float vertexRadius = 0.12f;
     [SerializeField] private float edgeWidth = 0.035f;
+    [SerializeField] private float thetaCoverCount = 2f;
+    [SerializeField] private int curveSegments = 10;
+    [SerializeField] private float worldQuatTheta = 0f;
+    [SerializeField] private Vector3 worldQuatDirn = new Vector3(0f, 0f, 1f);
+
 
     private void Awake()
     {
@@ -59,6 +64,8 @@ public class ProceduralCanvas : MonoBehaviour
             new Rect(0, 0, 64, 64),
             new Vector2(0.5f, 0.5f),
             64f);
+
+        thetaMaxDistRad = Mathf.PI * thetaCoverCount;
     }
 
     private void Start()
@@ -67,16 +74,21 @@ public class ProceduralCanvas : MonoBehaviour
 
         AssembleSoccerBall();
 
-        int a = AddVertex(new Vector2(-2f, 0f));
-        int b = AddVertex(new Vector2(0f, 1.5f));
-        int c = AddVertex(new Vector2(2f, 0f));
-        int d = AddVertex(new Vector2(0f, -1f));
+        foreach ((int a, int b) in connections3d)
+        {
+            AddEdge(a, b);
+        }
 
-        AddEdge(a, b);
-        AddEdge(b, c);
-        AddEdge(c, d);
-        AddEdge(d, a);
-        AddEdge(a, c);
+        // int a = AddVertex(new Vector2(-2f, 0f));
+        // int b = AddVertex(new Vector2(0f, 1.5f));
+        // int c = AddVertex(new Vector2(2f, 0f));
+        // int d = AddVertex(new Vector2(0f, -1f));
+
+        // AddEdge(a, b);
+        // AddEdge(b, c);
+        // AddEdge(c, d);
+        // AddEdge(d, a);
+        // AddEdge(a, c);
     }
 
     private void AssembleSoccerBall()
@@ -117,15 +129,12 @@ public class ProceduralCanvas : MonoBehaviour
         for (int a = 0; a < vertices3d.Count; a++)
         for (int b = a+1; b < vertices3d.Count; b++)
         {
-            Debug.Log($"Count: {vertices3d.Count}, a: {a}, b: {b}");
             float distance = Vector3.Distance(vertices3d[a], vertices3d[b]);
             if (Mathf.Abs(distance - 2f * scale) < 1e-5f)  
             {
                 connections3d.Add((a, b));
             }
         }
-
-        Debug.Log(connections3d.Count);
 
     }
 
@@ -151,33 +160,58 @@ public class ProceduralCanvas : MonoBehaviour
         return index;
     }
 
-    public int AddVector3d(Vector3 position)
+    private int AddVector3d(Vector3 position)
     {
         // The 3d vertices are simply mathematical tools;
         //  they do not render, but are the fundamental
         //  objects being projected into the 2d canvas.
-        int index = vertices3d.Count;
-        vertices3d.Add(position);
+        Vector3 vertex3dRotated = rotateVertex(position);
+        vertices3d.Add(vertex3dRotated);
+        Vector2 vertex3dAngles = computeVertex3dAngles(vertex3dRotated);
+        vertices3dAngles.Add(vertex3dAngles);
 
-        float theta = Mathf.Acos(position.z);
-        float phi = Mathf.Repeat(
-            Mathf.Atan2(position.y, position.x),
-            2f * Mathf.PI
-        );
-        vertices3dAngles.Add(new Vector2(theta, phi));
+        Vector2 mappedVertex = mapVertex(vertex3dAngles);
+        verticesMapped.Add(mappedVertex);
+
+        int index = AddVertex(mappedVertex);
 
         return index;
 
     }
 
-    public Vector2 mapVertice(Vector2 vertice3dAngles)
+    private Vector2 computeVertex3dAngles(Vector3 vertex3d)
+    {
+        float theta = Mathf.Acos(vertex3d.z);
+        float phi = Mathf.Repeat(
+            Mathf.Atan2(vertex3d.y, vertex3d.x),
+            2f * Mathf.PI
+        );
+        return new Vector2(theta, phi);
+    }
+
+    private Vector2 mapVertex(Vector2 vertex3dAngles)
     {
         // Maps a 3d vector onto the 2d canvas according
         //  to documentation.
-        float radius = vertice3dAngles[0];
-        float theta = vertice3dAngles[1];
+        float radius = vertex3dAngles[0];
+        float theta = vertex3dAngles[1];
 
         return new Vector2(Mathf.Cos(theta), Mathf.Sin(theta)) * radius;
+
+    }
+
+    public Vector3 rotateVertex(Vector3 vertIn)
+    {
+        Vector3 vertOut = new();
+
+        vertOut = (
+            vertIn * Mathf.Cos(worldQuatTheta)
+            + Vector3.Cross(worldQuatDirn, vertIn) * Mathf.Sin(worldQuatTheta)
+            + worldQuatDirn * (Vector3.Dot(worldQuatDirn, vertIn))
+                            * (1f - Mathf.Cos(worldQuatTheta))
+        );
+
+        return vertOut;
 
     }
 
@@ -204,7 +238,7 @@ public class ProceduralCanvas : MonoBehaviour
 
         LineRenderer line = obj.AddComponent<LineRenderer>();
         line.useWorldSpace = true;
-        line.positionCount = 2;
+        line.positionCount = curveSegments + 1;
         line.startWidth = edgeWidth;
         line.endWidth = edgeWidth;
         line.material = lineMaterial;
@@ -212,10 +246,15 @@ public class ProceduralCanvas : MonoBehaviour
         line.endColor = Color.white;
         line.sortingOrder = 0;
 
-        edges.Add(line);
-        connections.Add((a, b));
+        for (int i = 0; i <= curveSegments; i++)
+        {
+            float t = (float)i / curveSegments;
 
-        UpdateEdges();
+            Vector2 point2d = EvaluateCurve(a, b, t);
+            Vector3 point = new Vector3(point2d.x, point2d.y, 0f);
+            line.SetPosition(i, point);
+        }
+
     }
 
     private void LateUpdate()
@@ -229,9 +268,35 @@ public class ProceduralCanvas : MonoBehaviour
         {
             var (a, b) = connections[i];
 
-            edges[i].SetPosition(0, vertexObjects[a].position);
-            edges[i].SetPosition(1, vertexObjects[b].position);
+            LineRenderer line = edges[i];
+
+            for (int j = 0; j <= curveSegments; j++)
+            {
+                float t = (float)j / curveSegments;
+
+                Vector2 point2d = EvaluateCurve(a, b, t);
+                Vector3 point = new Vector3(point2d.x, point2d.y, 0f);
+                line.SetPosition(j, point);
+            }
         }
+    }
+
+    private Vector2 EvaluateCurve(int a, int b, float t)
+    {
+        // Grab the endpoint vectors
+        Vector3 vertex3dA = vertices3d[a];
+        Vector3 vertex3dB = vertices3d[b];
+
+        // Interpolate and map to the sphere
+        Vector3 vertex3dInterp = (1f - t) * vertex3dA + t * vertex3dB;
+        Vector3 unitVector = vertex3dInterp.normalized;
+
+        // Compute the angles
+        Vector2 vertex3dAngles = computeVertex3dAngles(unitVector);
+
+        // Map to a 2d position
+        return mapVertex(vertex3dAngles);
+
     }
 
     private void OnDestroy()
