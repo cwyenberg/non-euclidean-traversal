@@ -28,6 +28,7 @@ public class ProceduralCanvas : MonoBehaviour
     [SerializeField] private int curveSegments = 10;
     [SerializeField] private float worldQuatTheta = 0f;
     [SerializeField] private Vector3 worldQuatDirn = new Vector3(0f, 0f, 1f);
+    [SerializeField] private float moveSpeed = 10f;
 
 
     private void Awake()
@@ -256,6 +257,50 @@ public class ProceduralCanvas : MonoBehaviour
         }
 
     }
+
+
+    void Update()
+    {
+        bool dirty = false;
+        Quaternion q = new();
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            dirty = true;
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.right);
+        }
+
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            dirty = true;
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.left);
+        }
+
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            dirty = true;
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.up);
+        }
+
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            dirty = true;
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.down);
+        }
+
+        if (dirty)
+        {
+            Quaternion worldQ = Quaternion.AngleAxis(worldQuatTheta * 180f / Mathf.PI, worldQuatDirn);
+            worldQ *= q;
+            float worldQuatThetaDeg;
+            worldQ.ToAngleAxis(out worldQuatThetaDeg, out worldQuatDirn);
+            worldQuatTheta = worldQuatThetaDeg * Mathf.PI / 180f;
+
+            UpdateEdges();
+            Debug.Log(worldQ);
+        }
+    }
+
 
     private void LateUpdate()
     {
