@@ -213,15 +213,6 @@ public class ProceduralCanvas : MonoBehaviour
 
     }
 
-    // public void SetVert(int index, Vector2 position)
-    // {
-    //     verts[index] = position;
-    //     vertObjects[index].position =
-    //         new Vector3(position.x, position.y, 0f);
-
-    //     UpdateEdges();
-    // }
-
 
     public void AddEdge(int a, int b)
     {
@@ -251,7 +242,7 @@ public class ProceduralCanvas : MonoBehaviour
         connections.Add((a, b));
 
         // Draw the initial curve.
-        DrawEdge(a, b, line);
+        // DrawEdge(a, b, line);
 
     }
 
@@ -300,19 +291,19 @@ public class ProceduralCanvas : MonoBehaviour
         if (Input.GetKey(KeyCode.RightArrow))
         {
             dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.up);
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.forward);
         }
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
             dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.down);
+            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.back);
         }
 
         if (dirty)
         {
             Quaternion worldQ = Quaternion.AngleAxis(worldQuatTheta * 180f / Mathf.PI, worldQuatDirn);
-            worldQ *= q;
+            worldQ = q * worldQ;
             worldQ.ToAngleAxis(out float worldQuatThetaDeg, out worldQuatDirn);
             worldQuatTheta = worldQuatThetaDeg * Mathf.PI / 180f;
 

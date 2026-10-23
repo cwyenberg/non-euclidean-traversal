@@ -166,10 +166,10 @@ MonoBehaviour:
   vertRadius: 0.05
   edgeWidth: 0.02
   thetaCoverCount: 2
-  curveSegments: 100
+  curveSegments: 10
   worldQuatTheta: 0
   worldQuatDirn: {x: 0, y: 0, z: 1}
-  moveSpeed: 20
+  moveSpeed: 50
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
