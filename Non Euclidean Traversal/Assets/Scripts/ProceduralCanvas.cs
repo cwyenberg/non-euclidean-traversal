@@ -21,7 +21,7 @@ public class ProceduralCanvas : MonoBehaviour
 
     // Configurable fields
     [SerializeField] private float edgeWidth = 0.035f;
-    [SerializeField] private int numCovers = 2;
+    [SerializeField] private int numCovers = 1;
     [SerializeField] private int curveSegments = 10;
     [SerializeField] private float worldQuatTheta = 0f;
     [SerializeField] private Vector3 worldQuatDirn = new(0f, 0f, 1f);
@@ -110,6 +110,9 @@ public class ProceduralCanvas : MonoBehaviour
     {
         // Assemble the edges in 2d based on the 3d connections.
 
+        // Outer index denotes the cover ID in case of multiple covers;
+        // inner index denotes the edge ID in the connections list.
+
         for (int cover = 0; cover < numCovers; cover++)
         foreach (var (a, b) in connections3d)
         {
@@ -172,11 +175,12 @@ public class ProceduralCanvas : MonoBehaviour
             Mathf.Atan2(vert3d.y, vert3d.x),
             2f * Mathf.PI
         );
+
         return new Vector2(theta, phi);
     }
 
 
-    private Vector2 MapVert(Vector2 vert3dAngles)
+    private Vector2 Map3dAnglesToCanvas(Vector2 vert3dAngles)
     {
         // Maps a 3d vector onto the 2d canvas according
         //  to documentation.
@@ -195,8 +199,7 @@ public class ProceduralCanvas : MonoBehaviour
         vertOut = (
             vertIn * Mathf.Cos(worldQuatTheta)
             + Vector3.Cross(worldQuatDirn, vertIn) * Mathf.Sin(worldQuatTheta)
-            + worldQuatDirn * (Vector3.Dot(worldQuatDirn, vertIn))
-                            * (1f - Mathf.Cos(worldQuatTheta))
+            + (1f - Mathf.Cos(worldQuatTheta)) * Vector3.Dot(worldQuatDirn, vertIn) * worldQuatDirn
         );
 
         return vertOut;
@@ -204,15 +207,8 @@ public class ProceduralCanvas : MonoBehaviour
     }
 
 
-    public void AddEdge(int a, int b)
+    private void AddEdge()
     {
-        if (a < 0 || b < 0 ||
-            a >= baseMeshVerts3d.Count ||
-            b >= baseMeshVerts3d.Count)
-        {
-            Debug.LogError("Invalid vertex index.");
-            return;
-        }
 
         GameObject obj = new("Edge");
         obj.transform.SetParent(transform, false);
@@ -239,7 +235,7 @@ public class ProceduralCanvas : MonoBehaviour
         {
             float t = (float)j / curveSegments;
 
-            Vector2 point2d = EvaluateCurve(a, b, cover, t);
+            Vector2 point2d = EvalCanvasPosn(a, b, cover, t);
             Vector3 point = new(point2d.x, point2d.y, 0f);
 
             line.SetPosition(j, point);
@@ -249,10 +245,10 @@ public class ProceduralCanvas : MonoBehaviour
     private void UpdateCanvas()
     {
         for (int cover = 0; cover < numCovers; cover++)
-        for (int i = 0; i < edges2d.Count; i++)
+        for (int i = 0; i < connections3d.Count; i++)
         {
             var (a, b) = connections3d[i];
-            DrawEdge(a, b, cover, edges2d[i]);
+            DrawEdge(a, b, cover, edges2d[cover * connections3d.Count + i]);
         }
     }
 
@@ -293,7 +289,6 @@ public class ProceduralCanvas : MonoBehaviour
             worldQ.ToAngleAxis(out float worldQuatThetaDeg, out worldQuatDirn);
             worldQuatTheta = worldQuatThetaDeg * Mathf.PI / 180f;
 
-            UpdateVertices();
             UpdateCanvas();
             Debug.Log(worldQ);
 
@@ -306,23 +301,23 @@ public class ProceduralCanvas : MonoBehaviour
 
     // }
 
-    private void UpdateVertices()
-    {
-        for (int i = 0; i < baseMeshVerts3d.Count; i++)
-        {
-            Vector3 rotated = RotateVert(baseMeshVerts3d[i]);
+    // private void UpdateVertices()
+    // {
+    //     for (int i = 0; i < baseMeshVerts3d.Count; i++)
+    //     {
+    //         Vector3 rotated = RotateVert(baseMeshVerts3d[i]);
 
-            Vector2 angles = ComputeVert3dAngles(rotated.normalized);
-            Vector2 mapped = MapVert(angles);
+    //         Vector2 angles = ComputeVert3dAngles(rotated.normalized);
+    //         Vector2 mapped = MapVert(angles);
 
-            vertAngles3d[i] = angles;
-            vertsMapped[i] = mapped;
-            verts[i] = mapped;
-            vertObjects[i].position = (Vector3)mapped;
-        }
-    }
+    //         vertAngles3d[i] = angles;
+    //         vertsMapped[i] = mapped;
+    //         verts[i] = mapped;
+    //         vertObjects[i].position = (Vector3)mapped;
+    //     }
+    // }
 
-    private Vector2 EvaluateCurve(int a, int b, int cover, float t)
+    private Vector2 EvalCanvasPosn(int a, int b, int cover, float t)
     {
         // Rotate the original 3D endpoints.
         Vector3 vert3dA = RotateVert(baseMeshVerts3d[a]);
@@ -332,13 +327,23 @@ public class ProceduralCanvas : MonoBehaviour
         Vector3 vert3dInterp = (1f - t) * vert3dA + t * vert3dB;
         Vector2 vert3dAngles = ComputeVert3dAngles(vert3dInterp.normalized);
 
-        return MapVert(vert3dAngles);
+        // Map to the cover
+        vert3dAngles[0] = (
+            cover % 2 == 0
+            ? Mathf.PI * cover + vert3dAngles[0]
+            : Mathf.PI * (cover + 1) - vert3dAngles[0]
+        );
+        vert3dAngles[1] = Mathf.Repeat(
+            vert3dAngles[1] + cover * Mathf.PI, 2f * Mathf.PI);
+
+        return Map3dAnglesToCanvas(vert3dAngles);
+
     }
 
     private void OnDestroy()
     {
         if (lineMaterial != null)
             Destroy(lineMaterial);
-            
+
     }
 }
