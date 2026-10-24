@@ -166,7 +166,7 @@ MonoBehaviour:
   vertRadius: 0.05
   edgeWidth: 0.02
   thetaCoverCount: 2
-  curveSegments: 10
+  curveSegments: 100
   worldQuatTheta: 0
   worldQuatDirn: {x: 0, y: 0, z: 1}
   moveSpeed: 50
