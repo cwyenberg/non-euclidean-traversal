@@ -1,6 +1,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class ProceduralCanvas : MonoBehaviour
 {
@@ -15,13 +16,11 @@ public class ProceduralCanvas : MonoBehaviour
     [SerializeField] private float edgeWidth = 0.035f;
     [SerializeField] private int numCovers = 1;
     [SerializeField] private int curveSegments = 10;
-    [SerializeField] private float worldQuatTheta = 0f;
-    [SerializeField] private Vector3 worldQuatDirn = new(0f, 0f, 1f);
-    [SerializeField] private float moveSpeed = 10f;
 
 
     private void Awake()
     {
+
         // Material for visible 2D lines.
         Shader shader = Shader.Find("Sprites/Default");
         if (shader == null)
@@ -45,8 +44,8 @@ public class ProceduralCanvas : MonoBehaviour
             edgeWidth: edgeWidth,
             numCovers: numCovers,
             curveSegments: curveSegments,
-            worldQuatTheta: worldQuatTheta,
-            worldQuatDirn: worldQuatDirn
+            worldQuatTheta: PlayerMovement.worldQuatTheta,
+            worldQuatDirn: PlayerMovement.worldQuatDirn
         );
 
         // Assemble the soccer ball geometry and its connections in 3d.
@@ -56,7 +55,9 @@ public class ProceduralCanvas : MonoBehaviour
         soccerBall.Initialize();
 
         // And initialize the canvas with the initial positions of the vertices and edges.
-        soccerBall.Update(worldQuatTheta: worldQuatTheta, worldQuatDirn: worldQuatDirn);
+        soccerBall.Update(
+            worldQuatTheta: PlayerMovement.worldQuatTheta,
+            worldQuatDirn: PlayerMovement.worldQuatDirn);
 
     }
 
@@ -117,45 +118,15 @@ public class ProceduralCanvas : MonoBehaviour
     }
 
 
-    void Update()
+    void LateUpdate()
     {
-        bool dirty = false;
-        Quaternion q = new();
 
-        if (Input.GetKey(KeyCode.UpArrow))
+        if (PlayerMovement.hasMoved)
         {
-            dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.right);
-        }
-
-        if (Input.GetKey(KeyCode.DownArrow))
-        {
-            dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.left);
-        }
-
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-            dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.forward);
-        }
-
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            dirty = true;
-            q = Quaternion.AngleAxis(moveSpeed * Time.deltaTime, Vector3.back);
-        }
-
-        if (dirty)
-        {
-            Quaternion worldQ = Quaternion.AngleAxis(worldQuatTheta * 180f / Mathf.PI, worldQuatDirn);
-            worldQ = q * worldQ;
-            worldQ.ToAngleAxis(out float worldQuatThetaDeg, out worldQuatDirn);
-            worldQuatTheta = worldQuatThetaDeg * Mathf.PI / 180f;
 
             soccerBall.Update(
-                worldQuatTheta: worldQuatTheta, worldQuatDirn: worldQuatDirn);
-            Debug.Log(worldQ);
+                worldQuatTheta: PlayerMovement.worldQuatTheta,
+                worldQuatDirn: PlayerMovement.worldQuatDirn);
 
         }
     }

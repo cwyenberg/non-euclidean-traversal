@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 172009336}
   - component: {fileID: 172009337}
+  - component: {fileID: 172009338}
   m_Layer: 0
   m_Name: ProceduralCanvas
   m_TagString: Untagged
@@ -163,12 +164,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b60f4ab368ce4f5a82a24e696a665f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralCanvas
-  edgeWidth: 0.02
-  numCovers: 2
-  curveSegments: 100
-  worldQuatTheta: 0
-  worldQuatDirn: {x: 0, y: 0, z: 1}
-  moveSpeed: 100
+  edgeWidth: 0.04
+  numCovers: 1
+  curveSegments: 10
+--- !u!114 &172009338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172009335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7628ac81185724b15a358a09c6f2397c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  moveSpeed: 50
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
