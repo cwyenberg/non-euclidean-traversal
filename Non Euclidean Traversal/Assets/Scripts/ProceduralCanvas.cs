@@ -10,7 +10,7 @@ public class ProceduralCanvas : MonoBehaviour
     private WorldObject soccerBall;
 
     // Materials and sprites for drawing
-    private Material lineMaterial;
+    private Material soccerBallMaterial;
 
     // Configurable fields
     [SerializeField] private float edgeWidth = 0.035f;
@@ -29,23 +29,21 @@ public class ProceduralCanvas : MonoBehaviour
             return;
         }
 
-        lineMaterial = new Material(shader);
+        soccerBallMaterial = new Material(shader);
 
     }
 
     private void Start()
     {
-        if (lineMaterial == null) return;
+        if (soccerBallMaterial == null) return;
 
-        // Allocate
+        // Instantiate the soccer ball object with the initial worldQuatTheta and worldQuatDirn.
         soccerBall = new WorldObject(
             transform: transform,
-            lineMaterial: lineMaterial,
+            lineMaterial: soccerBallMaterial,
             edgeWidth: edgeWidth,
             numCovers: numCovers,
-            curveSegments: curveSegments,
-            worldQuatTheta: PlayerMovement.worldQuatTheta,
-            worldQuatDirn: PlayerMovement.worldQuatDirn
+            curveSegments: curveSegments
         );
 
         // Assemble the soccer ball geometry and its connections in 3d.
@@ -53,11 +51,6 @@ public class ProceduralCanvas : MonoBehaviour
 
         // Initialize the soccer ball with the initial positions of the vertices and edges.
         soccerBall.Initialize();
-
-        // And initialize the canvas with the initial positions of the vertices and edges.
-        soccerBall.Update(
-            worldQuatTheta: PlayerMovement.worldQuatTheta,
-            worldQuatDirn: PlayerMovement.worldQuatDirn);
 
     }
 
@@ -124,9 +117,7 @@ public class ProceduralCanvas : MonoBehaviour
         if (PlayerMovement.hasMoved)
         {
 
-            soccerBall.Update(
-                worldQuatTheta: PlayerMovement.worldQuatTheta,
-                worldQuatDirn: PlayerMovement.worldQuatDirn);
+            soccerBall.Update();
 
         }
     }
@@ -134,8 +125,8 @@ public class ProceduralCanvas : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (lineMaterial != null)
-            Destroy(lineMaterial);
+        if (soccerBallMaterial != null)
+            Destroy(soccerBallMaterial);
 
     }
 }

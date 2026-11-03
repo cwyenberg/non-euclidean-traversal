@@ -18,25 +18,20 @@ public class WorldObject
     private float edgeWidth;
     private int numCovers;
     private int curveSegments;
-    public float worldQuatTheta;
-    public Vector3 worldQuatDirn;
+
 
     public WorldObject(
         Transform transform,
         Material lineMaterial,
         float edgeWidth,
         int numCovers,
-        int curveSegments,
-        float worldQuatTheta,
-        Vector3 worldQuatDirn)
+        int curveSegments)
         {
             this.transform = transform;
             this.lineMaterial = lineMaterial;
             this.edgeWidth = edgeWidth;
             this.numCovers = numCovers;
             this.curveSegments = curveSegments;
-            this.worldQuatTheta = worldQuatTheta;
-            this.worldQuatDirn = worldQuatDirn;
         }
 
     
@@ -48,18 +43,17 @@ public class WorldObject
         AssembleEdges();
         
         // Update the canvas edges based on the current worldQuatTheta and worldQuatDirn.
-        UpdateCanvasEdges();
+        Update();
 
     }
 
 
-    public void Update(float worldQuatTheta, Vector3 worldQuatDirn)
+    public void Update()
     {
-        this.worldQuatTheta = worldQuatTheta;
-        this.worldQuatDirn = worldQuatDirn;
 
         // Update the canvas edges based on the current worldQuatTheta and worldQuatDirn.
-        UpdateCanvasEdges();    
+        UpdateCanvasEdges();
+
     }
 
 
@@ -137,10 +131,10 @@ public class WorldObject
         // Rotate the original 3D endpoints.
         Vector3 vert3dA = Fns.RotateVert(
             baseVert3dA,
-            angle: worldQuatTheta, qDirn: worldQuatDirn);
+            angle: PlayerMovement.worldQuatTheta, qDirn: PlayerMovement.worldQuatDirn);
         Vector3 vert3dB = Fns.RotateVert(
             baseVert3dB,
-            angle: worldQuatTheta, qDirn: worldQuatDirn);
+            angle: PlayerMovement.worldQuatTheta, qDirn: PlayerMovement.worldQuatDirn);
 
         // Interpolate and map to the spherical coords.
         Vector3 vert3dInterp = (1f - t) * vert3dA + t * vert3dB;
