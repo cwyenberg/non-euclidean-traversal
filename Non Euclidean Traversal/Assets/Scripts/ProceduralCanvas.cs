@@ -5,16 +5,11 @@ using UnityEngine;
 public class ProceduralCanvas : MonoBehaviour
 {
     // 2d lists
-    private readonly List<Vector2> verts2d = new();
-    private readonly List<(int a, int b)> connections2d = new();
     private readonly List<LineRenderer> edges2d = new();
-
 
     // 3d lists
     private readonly List<Vector3> baseMeshVerts3d = new();
     private readonly List<(int a, int b)> connections3d = new();
-    private readonly List<Vector2> vertAngles3d = new();
-    private float thetaMaxDistRad = 0f;
 
     // Materials and sprites for drawing
     private Material lineMaterial;
@@ -39,9 +34,6 @@ public class ProceduralCanvas : MonoBehaviour
         }
 
         lineMaterial = new Material(shader);
-
-        // Initialize some values for the spherical mapping.
-        thetaMaxDistRad = Mathf.PI * numCovers;
 
     }
 
@@ -122,52 +114,6 @@ public class ProceduralCanvas : MonoBehaviour
     }
 
 
-
-
-    // public int AddVert(Vector2 position)
-    // {
-    //     int index = verts.Count;
-    //     verts.Add(position);
-
-    //     GameObject obj = new("Vertex " + index);
-    //     obj.transform.SetParent(transform, false);
-    //     obj.transform.position = (Vector3)position;
-
-    //     SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
-    //     sr.sprite = vertSprite;
-    //     sr.color = new Color(0.2f, 0.75f, 1f);
-    //     sr.sortingOrder = 10;
-
-    //     obj.transform.localScale = Vector3.one *
-    //         (vertRadius * 2f);
-
-    //     vertObjects.Add(obj.transform);
-        
-    //     return index;
-
-    // }
-
-    // private int AddBaseMeshVert3d(Vector3 position)
-    // {
-    //     // The 3d verts are simply mathematical tools;
-    //     //  they do not render, but are the fundamental
-    //     //  objects being projected onto the 2d canvas.
-    //     baseMeshVerts3d.Add(position);
-
-    //     Vector3 vert3dRotated = RotateVert(position);
-    //     Vector2 vert3dAngles = ComputeVert3dAngles(vert3dRotated);
-    //     vertAngles3d.Add(vert3dAngles);
-
-    //     Vector2 mappedVert = MapVert(vert3dAngles);
-    //     vertsMapped.Add(mappedVert);
-
-    //     int index = AddVert(mappedVert);
-
-    //     return index;
-
-    // }
-
-
     private Vector2 ComputeVert3dAngles(Vector3 vert3d)
     {
         float theta = Mathf.Acos(vert3d.z);
@@ -192,19 +138,20 @@ public class ProceduralCanvas : MonoBehaviour
     }
 
 
-    public Vector3 RotateVert(Vector3 vertIn)
-    {
-        Vector3 vertOut = new();
+    // public Vector3 RotateVert(Vector3 vIn, float angle, Vector3 qDirn)
+    // {
+    //     // Rodrigues' rotation formula
 
-        vertOut = (
-            vertIn * Mathf.Cos(worldQuatTheta)
-            + Vector3.Cross(worldQuatDirn, vertIn) * Mathf.Sin(worldQuatTheta)
-            + (1f - Mathf.Cos(worldQuatTheta)) * Vector3.Dot(worldQuatDirn, vertIn) * worldQuatDirn
-        );
+    //     // Trig vals
+    //     float c = Mathf.Cos(angle);
+    //     float s = Mathf.Sin(angle);
 
-        return vertOut;
+    //     // Implement formula
+    //     return vIn * c
+    //         + Vector3.Cross(qDirn, vIn) * s
+    //         + (1f - c) * Vector3.Dot(qDirn, vIn) * qDirn;
 
-    }
+    // }
 
 
     private void AddEdge()
@@ -296,32 +243,15 @@ public class ProceduralCanvas : MonoBehaviour
     }
 
 
-    // private void LateUpdate()
-    // {
-
-    // }
-
-    // private void UpdateVertices()
-    // {
-    //     for (int i = 0; i < baseMeshVerts3d.Count; i++)
-    //     {
-    //         Vector3 rotated = RotateVert(baseMeshVerts3d[i]);
-
-    //         Vector2 angles = ComputeVert3dAngles(rotated.normalized);
-    //         Vector2 mapped = MapVert(angles);
-
-    //         vertAngles3d[i] = angles;
-    //         vertsMapped[i] = mapped;
-    //         verts[i] = mapped;
-    //         vertObjects[i].position = (Vector3)mapped;
-    //     }
-    // }
-
     private Vector2 EvalCanvasPosn(int a, int b, int cover, float t)
     {
         // Rotate the original 3D endpoints.
-        Vector3 vert3dA = RotateVert(baseMeshVerts3d[a]);
-        Vector3 vert3dB = RotateVert(baseMeshVerts3d[b]);
+        Vector3 vert3dA = Fns.RotateVert(
+            baseMeshVerts3d[a],
+            angle: worldQuatTheta, qDirn: worldQuatDirn);
+        Vector3 vert3dB = Fns.RotateVert(
+            baseMeshVerts3d[b],
+            angle: worldQuatTheta, qDirn: worldQuatDirn);
 
         // Interpolate and map to the spherical coords.
         Vector3 vert3dInterp = (1f - t) * vert3dA + t * vert3dB;
