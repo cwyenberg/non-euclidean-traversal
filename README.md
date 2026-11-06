@@ -77,3 +77,19 @@ world; but in rotation transformations we use the $u_x, u_y, u_z$ and $\theta$ f
 in Rodrigues' formula; i.e, that:
 
 $$ \mathbf{r}' = \mathbf{r} \cos(\theta) + (\mathbf{u} \times \mathbf{r}) \sin(\theta) + \mathbf{u} (\mathbf{u} \cdot \mathbf{v}) [1 - \cos(\theta)] $$
+
+### On Rasterizing near the coordinate singularity
+
+Consider a circle of constant $\theta$ on $S^2$, which has circumference
+
+$$
+C(\theta) = 2 \pi \sin(\theta).
+$$
+
+Our mapping to the 2D canvas assigns the azimuthal angle to the radial coordinate, such that the circle maps to one having circumference
+
+$$
+C'(\theta) = 2\pi \theta.
+$$
+
+We use the ratio $C'/C = \theta/\sin(\theta)$ as a proxy for the curvature that becomes singular at the antipole of the character's position on the 2D canvas, and assign a step distance to our line rasterization in proportion to $\sin(\theta)/\theta$ (with a minimum floor).

@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b60f4ab368ce4f5a82a24e696a665f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProceduralCanvas
-  edgeWidth: 0.04
+  edgeWidth: 0.02
   numCovers: 1
   curveSegments: 10
 --- !u!114 &172009338

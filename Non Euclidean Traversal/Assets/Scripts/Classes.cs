@@ -2,22 +2,22 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class WorldObject
+public abstract class WorldObject
 {
 
     // Vertices of the base object in 3d space, Euclidean coords.
-    public List<Vector3> baseObjectVerts3d = new();
+    protected readonly List<Vector3> baseObjectVerts3d = new();
     // Connections between the vertices of the base object in 3d space.
-    public List<(int a, int b)> connections3d = new();
+    protected readonly List<(int a, int b)> connections3d = new();
 
     // Lines to render with
     private readonly List<LineRenderer> edges2d = new();
 
-    private Transform transform;
-    private Material lineMaterial;
-    private float edgeWidth;
-    private int numCovers;
-    private int curveSegments;
+    private readonly Transform transform;
+    private readonly Material lineMaterial;
+    private readonly float edgeWidth;
+    private readonly int numCovers;
+    private readonly int curveSegments;
 
 
     public WorldObject(
@@ -32,12 +32,20 @@ public class WorldObject
             this.edgeWidth = edgeWidth;
             this.numCovers = numCovers;
             this.curveSegments = curveSegments;
+
+            Initialize();
+
         }
+
+    // Populate the baseObjectVerts3d and connections3d lists with the geometry of the object.
+    // This must be implemented for every object.
+    public abstract void BuildMe();
 
     
     public void Initialize()
     {
-        // Must be called after the baseObjectVerts3d and connections3d are populated.
+        // Build the baseObjectVerts3d and connections3d.
+        BuildMe();
 
         // Assemble the edges in 2d based on the 3d connections.
         AssembleEdges();
@@ -177,4 +185,119 @@ public class WorldObject
         return new Vector2(Mathf.Cos(theta), Mathf.Sin(theta)) * radius;
     }
 
+}
+
+
+
+public class SoccerBall : WorldObject
+{
+
+    public SoccerBall(
+        Transform transform,
+        Material lineMaterial,
+        float edgeWidth,
+        int numCovers,
+        int curveSegments)
+        : base(transform, lineMaterial, edgeWidth, numCovers, curveSegments)
+    {
+    }
+
+
+    public override void BuildMe()
+    {
+        // Build the soccer ball geometry
+        float tau = (1f + Mathf.Sqrt(5f)) / 2f;         // Golden ratio
+        float scale = 1f / Mathf.Sqrt(9f * tau + 10f);  // Scale factor
+
+        // Assemble the verts
+        float[] signs = { -1f, 1f };
+
+        foreach (float sign1 in signs)
+        foreach (float sign2 in signs)
+        {
+            // Family A:
+            baseObjectVerts3d.Add(
+                new Vector3(0f, sign1, sign2 * 3f * tau) * scale);
+            baseObjectVerts3d.Add(
+                new Vector3(sign1, sign2 * 3f * tau, 0f) * scale);
+            baseObjectVerts3d.Add(
+                new Vector3(sign2 * 3f * tau, 0f, sign1) * scale);
+
+            foreach (float sign3 in signs)
+            {
+                // Family B
+                baseObjectVerts3d.Add(
+                    new Vector3(sign1, sign2 * (2f + tau), sign3 * 2f * tau) * scale);
+                baseObjectVerts3d.Add(
+                    new Vector3(sign2 * (2f + tau), sign3 * 2f * tau, sign1) * scale);
+                baseObjectVerts3d.Add(
+                    new Vector3(sign3 * 2f * tau, sign1, sign2 * (2f + tau)) * scale);
+
+                // Family c
+                baseObjectVerts3d.Add(
+                    new Vector3(sign1 * tau, sign2 * 2f, sign3 * (2f * tau + 1f)) * scale);
+                baseObjectVerts3d.Add(
+                    new Vector3(sign2 * 2f, sign3 * (2f * tau + 1f), sign1 * tau) * scale);
+                baseObjectVerts3d.Add(
+                    new Vector3(sign3 * (2f * tau + 1f), sign1 * tau, sign2 * 2f) * scale);
+
+            }
+
+        }
+
+        // Assemble the connections
+        for (int a = 0; a < baseObjectVerts3d.Count; a++)
+        for (int b = a+1; b < baseObjectVerts3d.Count; b++)
+        {
+            float distance = Vector3.Distance(
+                baseObjectVerts3d[a], baseObjectVerts3d[b]);
+            if (Mathf.Abs(distance - 2f * scale) < 1e-5f)  
+            {
+                connections3d.Add((a, b));
+            }
+        }
+
+    }
+}
+
+
+
+
+public class Bullet : WorldObject
+{
+
+    public Bullet(
+        Transform transform,
+        Material lineMaterial,
+        float edgeWidth,
+        int numCovers,
+        int curveSegments)
+        : base(transform, lineMaterial, edgeWidth, numCovers, curveSegments)
+    {
+    }
+
+
+    public override void BuildMe()
+    {
+        // Build the bullet geometry
+
+        const float scale = 0.1f;  // Scale factor
+
+        baseObjectVerts3d.Add(new Vector3(scale, -scale, 1f));
+        baseObjectVerts3d.Add(new Vector3(scale, scale, 1f));
+        baseObjectVerts3d.Add(new Vector3(-scale, scale, 1f));
+        baseObjectVerts3d.Add(new Vector3(-scale, -scale, 1f));
+        foreach (Vector3 vert3d in baseObjectVerts3d)
+        {
+            // Normalize to sphere
+            vert3d.Normalize();
+        }
+
+        // Assemble the connections
+        connections3d.Add((0, 1));
+        connections3d.Add((1, 2));
+        connections3d.Add((2, 3));
+        connections3d.Add((3, 0));
+
+    }
 }

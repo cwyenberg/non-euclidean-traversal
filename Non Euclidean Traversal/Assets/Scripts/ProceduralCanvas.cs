@@ -7,10 +7,11 @@ public class ProceduralCanvas : MonoBehaviour
 {
 
     // Objects that will exist on the screen
-    private WorldObject soccerBall;
+    private SoccerBall soccerBall;
+    private Bullet bullet;
 
     // Materials and sprites for drawing
-    private Material soccerBallMaterial;
+    private Material lineMaterial;
 
     // Configurable fields
     [SerializeField] private float edgeWidth = 0.035f;
@@ -29,86 +30,35 @@ public class ProceduralCanvas : MonoBehaviour
             return;
         }
 
-        soccerBallMaterial = new Material(shader);
+        lineMaterial = new Material(shader);
 
     }
 
     private void Start()
     {
-        if (soccerBallMaterial == null) return;
+        if (lineMaterial == null) return;
 
-        // Instantiate the soccer ball object with the initial worldQuatTheta and worldQuatDirn.
-        soccerBall = new WorldObject(
+        // Instantiate the soccer ball with its own builder.
+        // Initialization is also called within the constructor
+        soccerBall = new SoccerBall(
             transform: transform,
-            lineMaterial: soccerBallMaterial,
+            lineMaterial: lineMaterial,
             edgeWidth: edgeWidth,
             numCovers: numCovers,
             curveSegments: curveSegments
         );
 
-        // Assemble the soccer ball geometry and its connections in 3d.
-        AssembleSoccerBall(soccerBall);
-
-        // Initialize the soccer ball with the initial positions of the vertices and edges.
-        soccerBall.Initialize();
-
-    }
-
-    private void AssembleSoccerBall(WorldObject soccerBall)
-    {
-        // Assemble the soccer ball geometry
-        float tau = (1f + Mathf.Sqrt(5f)) / 2f;         // Golden ratio
-        float scale = 1f / Mathf.Sqrt(9f * tau + 10f);  // Scale factor
-
-        // Assemble the verts
-        float[] signs = { -1f, 1f };
-
-        foreach (float sign1 in signs)
-        foreach (float sign2 in signs)
-        {
-            // Family A:
-            soccerBall.baseObjectVerts3d.Add(
-                new Vector3(0f, sign1, sign2 * 3f * tau) * scale);
-            soccerBall.baseObjectVerts3d.Add(
-                new Vector3(sign1, sign2 * 3f * tau, 0f) * scale);
-            soccerBall.baseObjectVerts3d.Add(
-                new Vector3(sign2 * 3f * tau, 0f, sign1) * scale);
-
-            foreach (float sign3 in signs)
-            {
-                // Family B
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign1, sign2 * (2f + tau), sign3 * 2f * tau) * scale);
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign2 * (2f + tau), sign3 * 2f * tau, sign1) * scale);
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign3 * 2f * tau, sign1, sign2 * (2f + tau)) * scale);
-
-                // Family c
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign1 * tau, sign2 * 2f, sign3 * (2f * tau + 1f)) * scale);
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign2 * 2f, sign3 * (2f * tau + 1f), sign1 * tau) * scale);
-                soccerBall.baseObjectVerts3d.Add(
-                    new Vector3(sign3 * (2f * tau + 1f), sign1 * tau, sign2 * 2f) * scale);
-
-            }
-
-        }
-
-        // Assemble the connections
-        for (int a = 0; a < soccerBall.baseObjectVerts3d.Count; a++)
-        for (int b = a+1; b < soccerBall.baseObjectVerts3d.Count; b++)
-        {
-            float distance = Vector3.Distance(
-                soccerBall.baseObjectVerts3d[a], soccerBall.baseObjectVerts3d[b]);
-            if (Mathf.Abs(distance - 2f * scale) < 1e-5f)  
-            {
-                soccerBall.connections3d.Add((a, b));
-            }
-        }
+        // // Instantiate the bullet with its own builder.
+        // bullet = new Bullet(
+        //     transform: transform,
+        //     lineMaterial: lineMaterial,
+        //     edgeWidth: edgeWidth,
+        //     numCovers: numCovers,
+        //     curveSegments: curveSegments
+        // );
 
     }
+
 
 
     void LateUpdate()
@@ -118,6 +68,7 @@ public class ProceduralCanvas : MonoBehaviour
         {
 
             soccerBall.Update();
+            // bullet.Update();
 
         }
     }
@@ -125,8 +76,8 @@ public class ProceduralCanvas : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (soccerBallMaterial != null)
-            Destroy(soccerBallMaterial);
+        if (lineMaterial != null)
+            Destroy(lineMaterial);
 
     }
 }
